@@ -1,0 +1,200 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description:
+  Create Security Group
+Metadata:
+  # Specify input parameter grouping and ordering
+  "AWS::CloudFormation::Interface": 
+    ParameterGroups: 
+      - Label: 
+          default: "Prefix"
+        Parameters: 
+          - Prefix
+Parameters:
+  Prefix:
+    Description: "Prefix for resource name"
+    Type: String
+    Default: "FirstPj-" # Prefix for resource name
+Resources:
+  # Security Group for ALB
+  LoadBalancerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub "${Prefix}LoadBalancerSecurityGroup"
+      GroupDescription: Security Group for ALB
+      VpcId: !ImportValue VPC # Import VPC ID from network stack
+      Tags:
+        - Key: Name
+          Value: !Sub "${Prefix}LoadBalancerSecurityGroup"
+  # Security Group for EC2
+  EC2WebSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub "${Prefix}EC2WebSecurityGroup"
+      GroupDescription: Security Group for EC2(Web)
+      VpcId: !ImportValue VPC # Import VPC ID from network stack
+      Tags:
+        - Key: Name
+          Value: !Sub "${Prefix}EC2WebSecurityGroup"
+  # Security Group for SSH
+  EC2SSHSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub "${Prefix}EC2SSHSecurityGroup"
+      GroupDescription: Security Group for EC2(SSH)
+      VpcId: !ImportValue VPC # Import VPC ID from network stack
+      Tags:
+        - Key: Name
+          Value: !Sub "${Prefix}EC2SSHSecurityGroup"
+  # Security Group for RDS(MySQL)
+  MySQLSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub "${Prefix}MySQLSecurityGroup"
+      GroupDescription: Security Group for RDS(MySQL)
+      VpcId: !ImportValue VPC # Import VPC ID from network stack
+      Tags:
+        - Key: Name
+          Value: !Sub "${Prefix}MySQLSecurityGroup"
+  # Security Group for ElastiCache(Memcached)
+  MemcachedSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub "${Prefix}MemcachedSecurityGroup"
+      GroupDescription: Security Group for ElastiCache(Memcached)
+      VpcId: !ImportValue VPC # Import VPC ID from network stack
+      Tags:
+        - Key: Name
+          Value: !Sub "${Prefix}MemcachedSecurityGroup"
+
+  # ALB inbound rule
+  LoadBalancerSecurityGroupIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref LoadBalancerSecurityGroup
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+      CidrIp: 0.0.0.0/0
+  # ALB outbound rule
+  LoadBalancerSecurityGroupEgress:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      GroupId: !Ref LoadBalancerSecurityGroup
+      IpProtocol: tcp
+      FromPort: 80
+      ToPort: 80
+      DestinationSecurityGroupId: !Ref EC2WebSecurityGroup
+
+  # EC2(Web) inbound rule
+  EC2WebSecurityGroupIngress1:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref EC2WebSecurityGroup
+      IpProtocol: tcp
+      FromPort: 80
+      ToPort: 80
+      SourceSecurityGroupId: !Ref LoadBalancerSecurityGroup
+  EC2WebSecurityGroupIngress2:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref EC2WebSecurityGroup
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+      SourceSecurityGroupId: !Ref EC2SSHSecurityGroup
+  # EC2(Web) outbound rule 
+  EC2WebSecurityGroupEgress1:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      GroupId: !Ref EC2WebSecurityGroup
+      IpProtocol: tcp
+      FromPort: 3306
+      ToPort: 3306
+      DestinationSecurityGroupId: !Ref MySQLSecurityGroup
+  EC2WebSecurityGroupEgress2:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      GroupId: !Ref EC2WebSecurityGroup
+      IpProtocol: tcp
+      FromPort: 11211
+      ToPort: 11211
+      DestinationSecurityGroupId: !Ref MemcachedSecurityGroup
+
+  # EC2(SSH) inbound rule
+  EC2SSHSecurityGroupIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref EC2SSHSecurityGroup
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+      CidrIp: !ImportValue VPCSSHCIDR
+  # EC2(SSH) outbound rule
+  EC2SSHSecurityGroupEgress:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      GroupId: !Ref EC2SSHSecurityGroup
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+      DestinationSecurityGroupId: !Ref EC2WebSecurityGroup
+
+  # RDS(MySQL) inbound rule
+  MySQLSecurityGroupIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref MySQLSecurityGroup
+      IpProtocol: tcp
+      FromPort: 3306
+      ToPort: 3306
+      SourceSecurityGroupId: !Ref EC2WebSecurityGroup
+  # RDS(MySQL) outbound rule
+  MySQLSecurityGroupEgress:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      GroupId: !Ref MySQLSecurityGroup
+      IpProtocol: "-1"
+      DestinationSecurityGroupId: !Ref EC2WebSecurityGroup
+
+  # ElastiCache(Memcached) inbound rule
+  MemcachedSecurityGroupIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref MemcachedSecurityGroup
+      IpProtocol: tcp
+      FromPort: 11211
+      ToPort: 11211
+      SourceSecurityGroupId: !Ref EC2WebSecurityGroup
+  # ElastiCache(Memcached) outbound rule
+  MemcachedSecurityGroupEgress:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      GroupId: !Ref MemcachedSecurityGroup
+      IpProtocol: "-1"
+      DestinationSecurityGroupId: !Ref EC2WebSecurityGroup
+Outputs:
+  LoadBalancerSecurityGroup:
+    Description: "Security Group for ALB"
+    Value: !Ref LoadBalancerSecurityGroup
+    Export:
+      Name: LoadBalancerSecurityGroup
+  EC2WebSecurityGroup:
+    Description: "Security Group for EC2(Web)"
+    Value: !Ref EC2WebSecurityGroup
+    Export:
+      Name: EC2WebSecurityGroup
+  EC2SSHSecurityGroup:
+    Description: "Security Group for EC2(SSH)"
+    Value: !Ref EC2SSHSecurityGroup
+    Export:
+      Name: EC2SSHSecurityGroup
+  MySQLSecurityGroup:
+    Description: "Security Group for RDS(MySQL)"
+    Value: !Ref MySQLSecurityGroup
+    Export:
+      Name: MySQLSecurityGroup
+  MemcachedSecurityGroup:
+    Description: "Security Group for ElastiCache(Memcached)"
+    Value: !Ref MemcachedSecurityGroup
+    Export:
+      Name: MemcachedSecurityGroup

@@ -1,0 +1,446 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description:
+  Create VPC, Subnet, InternetGateway, RouteTable, Route, SubnetRouteTableAssociation, PublicSubnetNetworkAcl, PrivateSubnetNetworkAcl, PublicSubnetNetworkAclAssociation, PrivateSubnetNetworkAclAssociation
+Metadata:
+  # Specify input parameter grouping and ordering
+  "AWS::CloudFormation::Interface": 
+    ParameterGroups: 
+      - Label: 
+          default: "Prefix"
+        Parameters: 
+          - Prefix
+      - Label: 
+          default: "Network Configuration"
+        Parameters: 
+          - VPCCIDR
+          - PublicSubnet1CIDR
+          - PublicSubnet2CIDR
+          - PrivateSubnet1CIDR
+          - PrivateSubnet2CIDR
+          - VPCSSHCIDR
+    ParameterLabels: 
+      VPCCIDR: 
+        default: "VPC CIDR"
+      PublicSubnet1CIDR: 
+        default: "PublicSubnet1 CIDR"
+      PublicSubnet2CIDR: 
+        default: "PublicSubnet2 CIDR"
+      PrivateSubnet1CIDR:
+        default: "PrivateSubnet1 CIDR"
+      PrivateSubnet2CIDR:
+        default: "PrivateSubnet2 CIDR"
+      VPCSSHCIDR:
+        default: "VPC SSH CIDR"
+Parameters:
+  Prefix:
+    Description: "Prefix for resource name"
+    Type: String
+    Default: "FirstPj-" # Prefix for resource name
+  VPCCIDR:
+    Description: "CIDR for VPC"
+    Type: String
+    Default: "10.0.0.0/16"
+  PublicSubnet1CIDR:
+    Description: "CIDR for PublicSubnet1"
+    Type: String
+    Default: "10.0.1.0/24"
+  PublicSubnet2CIDR:
+    Description: "CIDR for PublicSubnet2"
+    Type: String
+    Default: "10.0.2.0/24"
+  PrivateSubnet1CIDR:
+    Description: "CIDR for PrivateSubnet1"
+    Type: String
+    Default: "10.0.3.0/24"
+  PrivateSubnet2CIDR:
+    Description: "CIDR for PrivateSubnet2"
+    Type: String
+    Default: "10.0.4.0/24"
+  VPCSSHCIDR:
+    Description: "CIDR for VPC SSH"
+    Type: String
+    Default: "192.100.1.100/32"
+Resources:
+  # Create VPC
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VPCCIDR
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+      - Key: Name
+        Value: !Sub "${Prefix}VPC"
+  PublicSubnetNetworkAcl:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId: !Ref VPC
+      Tags: 
+        - Key: Name
+          Value: !Sub "${Prefix}PublicSubnetNACL"
+  PrivateSubnetNetworkAcl:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId: !Ref VPC
+      Tags: 
+        - Key: Name
+          Value: !Sub "${Prefix}PrivateSubnetNACL"
+  PublicSubnetNetworkAclAssociation1:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      NetworkAclId: !Ref PublicSubnetNetworkAcl
+  PublicSubnetNetworkAclAssociation2:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      NetworkAclId: !Ref PublicSubnetNetworkAcl
+  PrivateSubnetNetworkAclAssociation1:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet1
+      NetworkAclId: !Ref PrivateSubnetNetworkAcl
+  PrivateSubnetNetworkAclAssociation2:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet2
+      NetworkAclId: !Ref PrivateSubnetNetworkAcl
+  PublicSubnetInboundSSHRule:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref PublicSubnetNetworkAcl
+      RuleNumber: 100
+      Protocol: 6  # TCP
+      RuleAction: allow
+      Egress: false # false for inbound rule
+      CidrBlock: !Ref VPCSSHCIDR
+      PortRange:
+        From: 22
+        To: 22
+  PublicSubnetInboundHTTPRule:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref PublicSubnetNetworkAcl
+      RuleNumber: 101
+      Protocol: 6  # TCP
+      RuleAction: allow
+      Egress: false
+      CidrBlock: 0.0.0.0/0
+      PortRange:
+        From: 80
+        To: 80
+  PublicSubnetInboundHTTPSRule:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref PublicSubnetNetworkAcl
+      RuleNumber: 102
+      Protocol: 6  # TCP
+      RuleAction: allow
+      Egress: false
+      CidrBlock: 0.0.0.0/0
+      PortRange:
+        From: 443
+        To: 443
+  PublicSubnetInboundEphemeralRule:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref PublicSubnetNetworkAcl
+      RuleNumber: 103
+      Protocol: 6  # TCP
+      RuleAction: allow
+      Egress: false
+      CidrBlock: 0.0.0.0/0
+      PortRange:
+        From: 32768
+        To: 65535
+  PublicSubnetOutboundHTTPRule:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref PublicSubnetNetworkAcl
+      RuleNumber: 100
+      Protocol: 6  # TCP
+      RuleAction: allow
+      Egress: true
+      CidrBlock: 0.0.0.0/0
+      PortRange:
+        From: 80
+        To: 80
+  PublicSubnetOutboundHTTPSRule:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref PublicSubnetNetworkAcl
+      RuleNumber: 101
+      Protocol: 6  # TCP
+      RuleAction: allow
+      Egress: true
+      CidrBlock: 0.0.0.0/0
+      PortRange:
+        From: 443
+        To: 443
+  PublicSubnetOutbounEphemeralRule:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref PublicSubnetNetworkAcl
+      RuleNumber: 102
+      Protocol: 6  # TCP
+      RuleAction: allow
+      Egress: true
+      CidrBlock: 0.0.0.0/0
+      PortRange:
+        From: 32768
+        To: 65535
+  PrivateSubnetInboundSSHRule:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref PrivateSubnetNetworkAcl
+      RuleNumber: 100
+      Protocol: 6  # TCP
+      RuleAction: allow
+      Egress: false # false for inbound rule
+      CidrBlock: 0.0.0.0/0
+      PortRange:
+        From: 22
+        To: 22
+  PrivateSubnetInboundHTTPRule:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref PrivateSubnetNetworkAcl
+      RuleNumber: 101
+      Protocol: 6  # TCP
+      RuleAction: allow
+      Egress: false
+      CidrBlock: 0.0.0.0/0
+      PortRange:
+        From: 80
+        To: 80
+  PrivateSubnetInboundMySQLRule:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref PrivateSubnetNetworkAcl
+      RuleNumber: 102
+      Protocol: 6  # TCP
+      RuleAction: allow
+      Egress: false
+      CidrBlock: 0.0.0.0/0
+      PortRange:
+        From: 3306
+        To: 3306
+  PrivateSubnetInboundMemcacheRule:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref PrivateSubnetNetworkAcl
+      RuleNumber: 103
+      Protocol: 6  # TCP
+      RuleAction: allow
+      Egress: false
+      CidrBlock: 0.0.0.0/0
+      PortRange:
+        From: 11211
+        To: 11211
+  PrivateSubnetOutboundHTTPRule:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref PrivateSubnetNetworkAcl
+      RuleNumber: 100
+      Protocol: 6  # TCP
+      RuleAction: allow
+      Egress: true
+      CidrBlock: 0.0.0.0/0
+      PortRange:
+        From: 80
+        To: 80
+  PrivateSubnetOutboundHTTPSRule:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref PrivateSubnetNetworkAcl
+      RuleNumber: 101
+      Protocol: 6  # TCP
+      RuleAction: allow
+      Egress: true
+      CidrBlock: 0.0.0.0/0
+      PortRange:
+        From: 443
+        To: 443
+  PrivateSubnetOutboundEphemeralRule:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref PrivateSubnetNetworkAcl
+      RuleNumber: 102
+      Protocol: 6  # TCP
+      RuleAction: allow
+      Egress: true
+      CidrBlock: 0.0.0.0/0
+      PortRange:
+        From: 1024
+        To: 65535
+  # Create Public Subnet1
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PublicSubnet1CIDR
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      MapPublicIpOnLaunch: false # Do not assign public IP to public subnet
+      Tags:
+        - Key: Name
+          Value: !Sub "${Prefix}PublicSubnet1"
+  # Create Public Subnet2
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PublicSubnet2CIDR
+      AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      MapPublicIpOnLaunch: false # Do not assign public IP to public subnet
+      Tags:
+        - Key: Name
+          Value: !Sub "${Prefix}PublicSubnet2"
+  # Create Private Subnet1
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PrivateSubnet1CIDR
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      MapPublicIpOnLaunch: false # Do not assign public IP to private subnet
+      Tags:
+        - Key: Name
+          Value: !Sub "${Prefix}PrivateSubnet1"
+  # Create Private Subnet2
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PrivateSubnet2CIDR
+      AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      MapPublicIpOnLaunch: false # Do not assign public IP to private subnet
+      Tags:
+        - Key: Name
+          Value: !Sub "${Prefix}PrivateSubnet2"
+  # Create InternetGateway
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+      - Key: Name
+        Value: !Sub "${Prefix}InternetGateway"
+  # Attach InternetGateway to VPC
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+  # Create PublicRouteTable
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${Prefix}PublicRouteTable"
+  # Create PublicRouteTable
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${Prefix}PrivateRouteTable"
+  # Set the route to 0.0.0.0/0 as the Internet Gateway
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGateway # Wait for InternetGateway to be attached to VPC
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+  # Associate Public Subnet1 with RouteTable
+  PublicSubnetRouteTableAssociation1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+  # Associate Public Subnet2 with RouteTable
+  PublicSubnetRouteTableAssociation2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      RouteTableId: !Ref PublicRouteTable
+  # Associate Private Subnet1 with RouteTable
+  PrivateSubnetRouteTableAssociation1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet1
+      RouteTableId: !Ref PrivateRouteTable
+  # Associate Private Subnet2 with RouteTable
+  PrivateSubnetRouteTableAssociation2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet2
+      RouteTableId: !Ref PrivateRouteTable
+Outputs:
+  PublicSubnet1CIDR:
+    Description: "PublicSubnet1 CIDR"
+    Value: !Ref PublicSubnet1CIDR
+    Export:
+      Name: PublicSubnet1CIDR
+  PublicSubnet2CIDR:
+    Description: "PublicSubnet2 CIDR"
+    Value: !Ref PublicSubnet2CIDR
+    Export:
+      Name: PublicSubnet2CIDR
+  PrivateSubnet1CIDR:
+    Description: "PrivateSubnet1 CIDR"
+    Value: !Ref PrivateSubnet1CIDR
+    Export:
+      Name: PrivateSubnet1CIDR
+  PrivateSubnet2CIDR:
+    Description: "PrivateSubnet2 CIDR"
+    Value: !Ref PrivateSubnet2CIDR
+    Export:
+      Name: PrivateSubnet2CIDR
+  VPCSSHCIDR:
+    Description: "VPC SSH CIDR"
+    Value: !Ref VPCSSHCIDR
+    Export:
+      Name: VPCSSHCIDR
+  VPC:
+    Description: "VPC ID"
+    Value: !Ref VPC
+    Export:
+      Name: VPC
+  PublicSubnet1:
+    Description: "PublicSubnet1 ID"
+    Value: !Ref PublicSubnet1
+    Export:
+      Name: PublicSubnet1
+  PublicSubnet2:
+    Description: "PublicSubnet2 ID"
+    Value: !Ref PublicSubnet2
+    Export:
+      Name: PublicSubnet2
+  PrivateSubnet1:
+    Description: "PrivateSubnet1 ID"
+    Value: !Ref PrivateSubnet1
+    Export:
+      Name: PrivateSubnet1
+  PrivateSubnet2:
+    Description: "PrivateSubnet2 ID"
+    Value: !Ref PrivateSubnet2
+    Export:
+      Name: PrivateSubnet2
+  PublicRouteTable:
+    Description: "PublicRouteTable ID"
+    Value: !Ref PublicRouteTable
+    Export:
+      Name: PublicRouteTable
+  PrivateRouteTable:
+    Description: "PrivateRouteTable ID"
+    Value: !Ref PrivateRouteTable
+    Export:
+      Name: PrivateRouteTable
+  InternetGateway:
+    Description: "InternetGateway ID"
+    Value: !Ref InternetGateway
+    Export:
+      Name: InternetGateway

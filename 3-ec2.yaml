@@ -1,0 +1,55 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description:
+  Create EC2 instance, SSH Key Pair
+Metadata:
+  # Specify input parameter grouping and ordering
+  "AWS::CloudFormation::Interface": 
+    ParameterGroups: 
+      - Label: 
+          default: "Prefix"
+        Parameters: 
+          - Prefix
+Parameters:
+  Prefix:
+    Description: "Prefix for resource name"
+    Type: String
+    Default: "FirstPj-" # Prefix for resource name
+  EC2SSHImageId:
+    Description: 'AMI ID for the EC2 instance'
+    Type: AWS::EC2::Image::Id
+    Default: ami-03dceaabddff8067e
+  EC2SSHInstanceType:
+    Description: 'Instance type for the EC2 instance'
+    Type: String
+    Default: t2.micro
+Resources:
+  # SSH Key Pair
+  SSHKeyPair:
+    Type: AWS::EC2::KeyPair
+    Properties:
+      KeyName: !Sub ${Prefix}SSHKeyPair
+      PublicKeyMaterial: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJBkcBihSBocbF7d8INIPXhZStHmG5oNAlqEpyx7NbsS
+
+  # EC2 SSH instance
+  EC2SSHInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeType: gp3
+            VolumeSize: 10
+            DeleteOnTermination: true
+            Encrypted: true
+      ImageId: !Sub "${EC2SSHImageId}"
+      InstanceType: !Sub "${EC2SSHInstanceType}"
+      KeyName: !Ref SSHKeyPair
+      NetworkInterfaces:
+        - DeviceIndex: "0"
+          SubnetId: !ImportValue PublicSubnet1
+          GroupSet:
+            - !ImportValue EC2SSHSecurityGroup
+          AssociatePublicIpAddress: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${Prefix}EC2SSHInstance"
