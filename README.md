@@ -104,9 +104,10 @@
 
 | Rule Number | Protocol | Port Range | Destination | Action |
 | ---------- | ---------- | ---------- | ----------------- | --------------- |
-| 100        | TCP (6)    | 80         | 0.0.0.0/0         | Allow           |
-| 101        | TCP (6)    | 443        | 0.0.0.0/0         | Allow           |
-| 102        | TCP (6)    | 1024-65535 | 0.0.0.0/0         | Allow           |
+| 100        | TCP (6)    | 22         | 0.0.0.0/0         | Allow           |
+| 101        | TCP (6)    | 80         | 0.0.0.0/0         | Allow           |
+| 102        | TCP (6)    | 443        | 0.0.0.0/0         | Allow           |
+| 103        | TCP (6)    | 1024-65535 | 0.0.0.0/0         | Allow           |
 | *          | ALL        | ALL        | 0.0.0.0/0         | Deny            |
 
 ## Network ACL(Private Subnet)

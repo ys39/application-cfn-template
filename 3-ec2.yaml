@@ -15,13 +15,21 @@ Parameters:
     Type: String
     Default: "FirstPj-" # Prefix for resource name
   EC2SSHImageId:
-    Description: 'AMI ID for the EC2 instance'
+    Description: 'AMI ID for the EC2 SSH instance'
     Type: AWS::EC2::Image::Id
     Default: ami-03dceaabddff8067e
   EC2SSHInstanceType:
-    Description: 'Instance type for the EC2 instance'
+    Description: 'Instance type for the EC2 SSH instance'
     Type: String
-    Default: t2.micro
+    Default: t2.nano
+  EC2WebImageId:
+    Description: 'AMI ID for the EC2 Web instance'
+    Type: AWS::EC2::Image::Id
+    Default: ami-03dceaabddff8067e
+  EC2WebInstanceType:
+    Description: 'Instance type for the EC2 Web instance'
+    Type: String
+    Default: t2.nano
 Resources:
   # SSH Key Pair
   SSHKeyPair:
@@ -29,7 +37,17 @@ Resources:
     Properties:
       KeyName: !Sub ${Prefix}SSHKeyPair
       PublicKeyMaterial: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJBkcBihSBocbF7d8INIPXhZStHmG5oNAlqEpyx7NbsS
-
+  # EIP
+  EC2SSHEIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+  # EIP Association
+  EC2SSHEIPAssociation:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      AllocationId: !GetAtt EC2SSHEIP.AllocationId
+      InstanceId: !Ref EC2SSHInstance
   # EC2 SSH instance
   EC2SSHInstance:
     Type: AWS::EC2::Instance
@@ -49,7 +67,56 @@ Resources:
           SubnetId: !ImportValue PublicSubnet1
           GroupSet:
             - !ImportValue EC2SSHSecurityGroup
-          AssociatePublicIpAddress: true
+          AssociatePublicIpAddress: true # Enable public IP
+          PrivateIpAddress: "10.0.1.10" # Private IP Address
       Tags:
         - Key: Name
           Value: !Sub "${Prefix}EC2SSHInstance"
+  # EC2 Web instance1
+  EC2WebInstance1:
+    Type: AWS::EC2::Instance
+    Properties:
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeType: gp3
+            VolumeSize: 10
+            DeleteOnTermination: true
+            Encrypted: true
+      ImageId: !Sub "${EC2WebImageId}"
+      InstanceType: !Sub "${EC2WebInstanceType}"
+      KeyName: !Ref SSHKeyPair
+      NetworkInterfaces:
+        - DeviceIndex: "0"
+          SubnetId: !ImportValue PrivateSubnet1
+          GroupSet:
+            - !ImportValue EC2WebSecurityGroup
+          AssociatePublicIpAddress: false # Disable public IP
+          PrivateIpAddress: "10.0.3.10" # Private IP Address
+      Tags:
+        - Key: Name
+          Value: !Sub "${Prefix}EC2WebInstance1"
+  # EC2 Web instance2
+  EC2WebInstance2:
+    Type: AWS::EC2::Instance
+    Properties:
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeType: gp3
+            VolumeSize: 10
+            DeleteOnTermination: true
+            Encrypted: true
+      ImageId: !Sub "${EC2WebImageId}"
+      InstanceType: !Sub "${EC2WebInstanceType}"
+      KeyName: !Ref SSHKeyPair
+      NetworkInterfaces:
+        - DeviceIndex: "0"
+          SubnetId: !ImportValue PrivateSubnet2
+          GroupSet:
+            - !ImportValue EC2WebSecurityGroup
+          AssociatePublicIpAddress: false # Disable public IP
+          PrivateIpAddress: "10.0.4.10" # Private IP Address
+      Tags:
+        - Key: Name
+          Value: !Sub "${Prefix}EC2WebInstance2"
