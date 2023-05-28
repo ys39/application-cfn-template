@@ -1,0 +1,138 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description:
+  Create RDS instance
+Metadata:
+  # Specify input parameter grouping and ordering
+  "AWS::CloudFormation::Interface": 
+    ParameterGroups: 
+      - Label: 
+          default: "Prefix"
+        Parameters: 
+          - Prefix
+      - Label:
+          default: "RDS Configuration"
+        Parameters:
+          - MySQLMajorVersion
+          - MySQLMinorVersion
+          - DBInstanceClass
+          - DBInstanceStorageSize
+          - DBInstanceStorageType
+          - DBName
+          - DBMasterUserName
+          - DBPassword
+          - MultiAZ
+    ParameterLabels:
+      MySQLMajorVersion:
+        default: "MySQLMajorVersion"
+      MySQLMinorVersion:
+        default: "MySQLMinorVersion"
+      DBInstanceClass:
+        default: "DBInstanceClass"
+      DBInstanceStorageSize:
+        default: "DBInstanceStorageSize"
+      DBInstanceStorageType:
+        default: "DBInstanceStorageType"
+      DBName:
+        default: "DBName"
+      DBMasterUserName:
+        default: "DBUserName"
+      DBPassword:
+        default: "DBPassword"
+      MultiAZ:
+        default: "MultiAZ"
+Parameters:
+  Prefix:
+    Description: "Prefix for resource name"
+    Type: String
+    Default: "FirstPj-" # Prefix for resource name
+  MySQLMajorVersion:
+    Type: String
+    Default: "8.0"
+    AllowedValues: [ "8.0" ]
+  MySQLMinorVersion:
+    Type: String
+    Default: "32"
+  DBInstanceClass:
+    Type: String
+    Default: "db.t3.micro" 
+  DBInstanceStorageSize:
+    Type: String
+    Default: "30"
+  DBInstanceStorageType:
+    Type: String
+    Default: "gp3"
+  DBName:
+    Type: String
+    Default: "appdb"
+  DBMasterUserName:
+    Type: String
+    Default: "admin"
+    NoEcho: true
+    MinLength: "1"
+    MaxLength: "16"
+    AllowedPattern: "[a-zA-Z][a-zA-Z0-9]*"
+    ConstraintDescription: "must begin with a letter and contain only alphanumeric characters."
+  DBPassword: 
+    Default: "password"
+    NoEcho: true
+    Type: String
+    MinLength: "8"
+    MaxLength: "41"
+    AllowedPattern: "[a-zA-Z0-9]*"
+    ConstraintDescription: "must contain only alphanumeric characters."
+  MultiAZ: 
+    Default: "false"
+    Type: String
+    AllowedValues: [ "true", "false" ]
+
+Resources:
+  # RDS(MySQL) Parameter Group
+  DBParameterGroup:
+    Type: "AWS::RDS::DBParameterGroup"
+    Properties:
+      Family: !Sub "mysql${MySQLMajorVersion}"
+      Description: !Sub "${Prefix}MySQLInstanceParameterGroup"
+      Parameters:
+        character_set_client: utf8mb4
+        character_set_database: utf8mb4
+        character_set_server: utf8mb4
+        character_set_results: utf8mb4
+        character_set_connection: utf8mb4
+
+  # RDS(MySQL) Subnet Group
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Subnets for RDS DB Instance
+      SubnetIds:
+        - !ImportValue PrivateSubnet1 # Import private subnet ID in AZ1 from network stack
+        - !ImportValue PrivateSubnet2 # Import private subnet ID in AZ2 from network stack
+
+  # RDS(MySQL) instance
+  MySQLInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      Engine: MySQL
+      EngineVersion: !Sub "${MySQLMajorVersion}.${MySQLMinorVersion}"
+      MultiAZ: !Ref MultiAZ
+      DBInstanceIdentifier: !Sub "${Prefix}MySQLInstance"
+      MasterUsername: !Ref DBMasterUserName
+      MasterUserPassword: !Ref DBPassword
+      DBInstanceClass: !Ref DBInstanceClass
+      AllocatedStorage: !Ref DBInstanceStorageSize
+      StorageType: !Ref DBInstanceStorageType
+      VPCSecurityGroups:
+        - !ImportValue MySQLSecurityGroup # Import Security Group ID from security group stack
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      PubliclyAccessible: false
+      DBName: !Ref DBName
+      DBParameterGroupName: !Ref DBParameterGroup # Import DB Parameter Group ID from RDS Parameter Group stack
+      PreferredBackupWindow: "16:00-16:30" # Backup window in UTC = 1:00-1:30 JST 
+      BackupRetentionPeriod: 7
+      CopyTagsToSnapshot: true
+      StorageEncrypted: true
+      AutoMinorVersionUpgrade: false
+      Tags:
+        - Key: Name
+          Value: !Sub "${Prefix}MySQLInstance"
+    DeletionPolicy: "Delete"
