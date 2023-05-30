@@ -8,6 +8,7 @@
     - To avoid circular references, I am setting inbound/outbound rules after creating the security group.
 3. 3-ec2.yaml
 4. 4-rds.yaml
+    - Important to check mysql parameters
 5. 5-elasticache.yaml
 6. 6-applicationloadbalancer.yaml
 7. 7-natgateway.yaml

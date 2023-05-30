@@ -98,6 +98,9 @@ Resources:
         character_set_server: utf8mb4
         character_set_results: utf8mb4
         character_set_connection: utf8mb4
+        character_set_filesystem: binary
+        skip-character-set-client-handshake: 0
+        time_zone: Asia/Tokyo
 
   # RDS(MySQL) Subnet Group
   DBSubnetGroup:
