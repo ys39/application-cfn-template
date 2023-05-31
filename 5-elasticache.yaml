@@ -1,0 +1,53 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description:
+  Create ElastiCache instance
+Metadata:
+  # Specify input parameter grouping and ordering
+  "AWS::CloudFormation::Interface": 
+    ParameterGroups: 
+      - Label: 
+          default: "Prefix"
+        Parameters: 
+          - Prefix
+Parameters:
+  Prefix:
+    Description: "Prefix for resource name"
+    Type: String
+    Default: "FirstPj-" # Prefix for resource name
+
+Resources:
+  # ElastiCache instance
+  ElastiCacheInstance:
+    Type: AWS::ElastiCache::CacheCluster
+    Properties:
+      AZMode: single-az
+      AutoMinorVersionUpgrade: true
+      CacheNodeType: cache.t2.micro
+      CacheSubnetGroupName: !Ref ElastiCacheSubnetGroup
+      ClusterName: !Sub ${Prefix}ElastiCache
+      Engine: redis
+      EngineVersion: 6.x
+      NumCacheNodes: 1
+      Port: 6379
+      PreferredAvailabilityZone: !Select [ 0, !GetAZs ]
+      PreferredMaintenanceWindow: sun:05:00-sun:06:00
+      SnapshotRetentionLimit: 0
+      VpcSecurityGroupIds:
+        - !Ref ElastiCacheSecurityGroup
+  # ElastiCache Subnet Group
+  ElastiCacheSubnetGroup:
+    Type: AWS::ElastiCache::SubnetGroup
+    Properties:
+      CacheSubnetGroupName: !Sub ${Prefix}ElastiCacheSubnetGroup
+      Description: ElastiCache Subnet Group
+      SubnetIds:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+  # ElastiCache Security Group
+  ElastiCacheSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ElastiCache Security Group
+      GroupName: !Sub ${Prefix}ElastiCacheSecurityGroup
+      SecurityGroupIngress:
+        - CidrIp:

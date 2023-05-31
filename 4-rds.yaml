@@ -90,6 +90,7 @@ Resources:
   DBParameterGroup:
     Type: "AWS::RDS::DBParameterGroup"
     Properties:
+      DBParameterGroupName: !Sub "${Prefix}MySQLInstanceParameterGroup"
       Family: !Sub "mysql${MySQLMajorVersion}"
       Description: !Sub "${Prefix}MySQLInstanceParameterGroup"
       Parameters:
@@ -106,10 +107,11 @@ Resources:
   DBSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
     Properties:
+      DBSubnetGroupName: !Sub "${Prefix}MySQLInstanceSubnetGroup"
       DBSubnetGroupDescription: Subnets for RDS DB Instance
       SubnetIds:
-        - !ImportValue PrivateSubnet1 # Import private subnet ID in AZ1 from network stack
         - !ImportValue PrivateSubnet2 # Import private subnet ID in AZ2 from network stack
+        - !ImportValue PrivateSubnet1 # Import private subnet ID in AZ1 from network stack
 
   # RDS(MySQL) instance
   MySQLInstance:
