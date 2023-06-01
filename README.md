@@ -9,6 +9,7 @@
 3. 3-ec2.yaml
 4. 4-rds.yaml
     - Important to check mysql parameters
+    - In RDS (MultiAZ), you cannot specify the Availability Zone (AZ) for the Primary instance. If you want to place the Primary in a specific AZ, you need to manually failover after creating the instance.
 5. 5-elasticache.yaml
 6. 6-applicationloadbalancer.yaml
 7. 7-natgateway.yaml

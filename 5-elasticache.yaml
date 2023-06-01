@@ -14,40 +14,46 @@ Parameters:
     Description: "Prefix for resource name"
     Type: String
     Default: "FirstPj-" # Prefix for resource name
-
+  MemcachedVersion:
+    Type: String
+    Default: "1.6.17"
+    AllowedValues: [ "1.6.17" ]
+  ElastiCacheInstanceClass:
+    Type: String
+    Default: "db.t2.micro" 
+  ElastiCacheNodeCount:
+    Type: String
+    Default: "1"
 Resources:
   # ElastiCache instance
   ElastiCacheInstance:
     Type: AWS::ElastiCache::CacheCluster
     Properties:
       AZMode: single-az
-      AutoMinorVersionUpgrade: true
-      CacheNodeType: cache.t2.micro
+      AutoMinorVersionUpgrade: false
+      CacheNodeType: !Ref ElastiCacheInstanceClass
       CacheSubnetGroupName: !Ref ElastiCacheSubnetGroup
-      ClusterName: !Sub ${Prefix}ElastiCache
-      Engine: redis
-      EngineVersion: 6.x
-      NumCacheNodes: 1
-      Port: 6379
-      PreferredAvailabilityZone: !Select [ 0, !GetAZs ]
-      PreferredMaintenanceWindow: sun:05:00-sun:06:00
-      SnapshotRetentionLimit: 0
+      ClusterName: !Sub "${Prefix}ElastiCache-Memcached"
+      Engine: memcached
+      EngineVersion: !Ref MemcachedVersion
+      NumCacheNodes: !Ref ElastiCacheNodeCount
+      Port: 11211
+      PreferredAvailabilityZone: !Select [ 0, !GetAZs '' ]
+      PreferredMaintenanceWindow: sun:17:00-sun:18:00
       VpcSecurityGroupIds:
-        - !Ref ElastiCacheSecurityGroup
+        - !ImportValue ElastiCacheSecurityGroup
   # ElastiCache Subnet Group
   ElastiCacheSubnetGroup:
     Type: AWS::ElastiCache::SubnetGroup
     Properties:
-      CacheSubnetGroupName: !Sub ${Prefix}ElastiCacheSubnetGroup
-      Description: ElastiCache Subnet Group
+      CacheSubnetGroupName: !Sub "${Prefix}ElastiCacheSubnetGroup"
+      Description: !Sub "${Prefix}ElastiCache Subnet Group"
       SubnetIds:
-        - !Ref PublicSubnet1
-        - !Ref PublicSubnet2
-  # ElastiCache Security Group
-  ElastiCacheSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
+        - !ImportValue PrivateSubnet1
+        - !ImportValue PrivateSubnet2
+  # ElastiCache Parameter Group
+  ElastiCacheParameterGroup:
+    Type: AWS::ElastiCache::ParameterGroup
     Properties:
-      GroupDescription: ElastiCache Security Group
-      GroupName: !Sub ${Prefix}ElastiCacheSecurityGroup
-      SecurityGroupIngress:
-        - CidrIp:
+      CacheParameterGroupFamily: memcached1.6
+      Description: !Sub "${Prefix}Memcached Parameter Group"
