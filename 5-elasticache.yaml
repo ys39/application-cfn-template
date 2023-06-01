@@ -20,7 +20,7 @@ Parameters:
     AllowedValues: [ "1.6.17" ]
   ElastiCacheInstanceClass:
     Type: String
-    Default: "db.t2.micro" 
+    Default: "cache.t4g.micro" 
   ElastiCacheNodeCount:
     Type: String
     Default: "1"
@@ -41,7 +41,7 @@ Resources:
       PreferredAvailabilityZone: !Select [ 0, !GetAZs '' ]
       PreferredMaintenanceWindow: sun:17:00-sun:18:00
       VpcSecurityGroupIds:
-        - !ImportValue ElastiCacheSecurityGroup
+        - !ImportValue MemcachedSecurityGroup
   # ElastiCache Subnet Group
   ElastiCacheSubnetGroup:
     Type: AWS::ElastiCache::SubnetGroup
@@ -50,7 +50,6 @@ Resources:
       Description: !Sub "${Prefix}ElastiCache Subnet Group"
       SubnetIds:
         - !ImportValue PrivateSubnet1
-        - !ImportValue PrivateSubnet2
   # ElastiCache Parameter Group
   ElastiCacheParameterGroup:
     Type: AWS::ElastiCache::ParameterGroup

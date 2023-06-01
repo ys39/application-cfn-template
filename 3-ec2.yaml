@@ -30,6 +30,14 @@ Parameters:
     Description: 'Instance type for the EC2 Web instance'
     Type: String
     Default: t2.nano
+  EC2WebInstance1Hostname:
+    Description: 'Hostname for the EC2 Web instance1'
+    Type: String
+    Default: web1
+  EC2WebInstance2Hostname:
+    Description: 'Hostname for the EC2 Web instance2'
+    Type: String
+    Default: web2
 Resources:
   # SSH Key Pair
   SSHKeyPair:
@@ -96,6 +104,45 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub "${Prefix}EC2WebInstance1"
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          # Install packages
+          yum clean all
+          yum -y install epel-release
+          yum -y install http://ftp.riken.jp/Linux/remi/enterprise/remi-release-9.rpm
+          yum -y update
+          yum -y install \
+          net-tools \
+          bind-utils \
+          lsof \
+          vim \
+          wget \
+          git \
+          dstat \
+          openssl \
+          nginx
+          # Disable SELinux and Firewalld
+          sed -i -e "s/^SELINUX=enforcing$/SELINUX=permissive/g" /etc/selinux/config
+          systemctl stop firewalld
+          systemctl disable firewalld
+          # Disable IPv6
+          echo "net.ipv6.conf.all.disable_ipv6 = 1" >> /etc/sysctl.d/disable_ipv6.conf
+          echo "net.ipv6.conf.default.disable_ipv6 = 1" >> /etc/sysctl.d/disable_ipv6.conf
+          sysctl -p/etc/sysctl.d/disable_ipv6.conf
+          # Set timezone
+          dnf -y install glibc-langpack-ja
+          localectl set-locale LANG=ja_JP.utf8
+          timedatectl set-timezone Asia/Tokyo
+          # Set NTP
+          sed -ie "s/server 0.centos.pool.ntp.org iburst/server ntp1.jst.mfeed.ad.jp iburst/g" /etc/chrony.conf
+          sed -ie "s/server 1.centos.pool.ntp.org iburst/server ntp2.jst.mfeed.ad.jp iburst/g" /etc/chrony.conf
+          sed -ie "s/server 2.centos.pool.ntp.org iburst/server ntp3.jst.mfeed.ad.jp iburst/g" /etc/chrony.conf
+          sed -ie "s/server 3.centos.pool.ntp.org iburst/server ntp.nict.jp iburst/g" /etc/chrony.conf
+          systemctl restart chronyd
+          chronyc makestep
+          # hostname
+          hostnamectl set-hostname --static ${EC2WebInstance1Hostname}
   # EC2 Web instance2
   EC2WebInstance2:
     Type: AWS::EC2::Instance
@@ -120,3 +167,14 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub "${Prefix}EC2WebInstance2"
+Outputs:
+  EC2WebInstance1:
+    Description: "EC2 Web Instance1"
+    Value: !Ref EC2WebInstance1
+    Export:
+      Name: EC2WebInstance1
+  EC2WebInstance2:
+    Description: "EC2 Web Instance2"
+    Value: !Ref EC2WebInstance2
+    Export:
+      Name: EC2WebInstance2

@@ -1,0 +1,85 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description:
+  Create Load Balancer
+Metadata:
+  # Specify input parameter grouping and ordering
+  "AWS::CloudFormation::Interface": 
+    ParameterGroups: 
+      - Label: 
+          default: "Prefix"
+        Parameters: 
+          - Prefix
+Parameters:
+  Prefix:
+    Description: "Prefix for resource name"
+    Type: String
+    Default: "FirstPj-" # Prefix for resource name
+  HealthCheckIntervalSeconds:
+    Type: String
+    Default: "30"
+  HealthCheckTimeoutSeconds:
+    Type: String
+    Default: "5"
+  HealthyThresholdCount:
+    Type: String
+    Default: "5"
+  UnhealthyThresholdCount:
+    Type: String
+    Default: "2"
+  HealthCheckPath:
+    Type: String
+    Default: "/"
+Resources:
+  # Application Load Balancer
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub "${Prefix}LoadBalancer"
+      Scheme: internet-facing
+      Subnets:
+        - !ImportValue PublicSubnet1
+        - !ImportValue PublicSubnet2
+      SecurityGroups:
+        - !ImportValue LoadBalancerSecurityGroup
+      Type: application
+      IpAddressType: ipv4
+      Tags:
+        - Key: Name
+          Value: !Sub "${Prefix}LoadBalancer"
+  # Load Balancer Listener
+  LoadBalancerListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref LoadBalancerTargetGroup
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 80
+      Protocol: HTTP
+  # Application Load Balancer Target Group
+  LoadBalancerTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckEnabled: true
+      HealthCheckIntervalSeconds: !Ref HealthCheckIntervalSeconds
+      HealthCheckPath: !Ref HealthCheckPath
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: !Ref HealthCheckTimeoutSeconds
+      HealthyThresholdCount: !Ref HealthyThresholdCount
+      UnhealthyThresholdCount: !Ref UnhealthyThresholdCount
+      Matcher:
+        HttpCode: 200
+      Name: !Sub "${Prefix}LoadBalancerTargetGroup"
+      Port: 80
+      Protocol: HTTP
+      ProtocolVersion: HTTP1
+      VpcId: !ImportValue VPC
+      TargetType: instance
+      Targets:
+        - Id: !ImportValue EC2WebInstance1
+          Port: 80
+        - Id: !ImportValue EC2WebInstance2
+          Port: 80
+      Tags:
+        - Key: Name
+          Value: !Sub "${Prefix}LoadBalancerTargetGroup"

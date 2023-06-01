@@ -3,6 +3,7 @@
 ![Diagram](application_diagram.png)
 
 ## Execution order of CloudFormation
+* The files 3-ec2.yaml, 4-rds.yaml, and 5-elasticache.yaml can be executed in any order.
 1. 1-network.yaml
 2. 2-securitygroup.yaml
     - To avoid circular references, I am setting inbound/outbound rules after creating the security group.
