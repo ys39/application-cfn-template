@@ -8,6 +8,7 @@
 2. 2-securitygroup.yaml
     - To avoid circular references, I am setting inbound/outbound rules after creating the security group.
 3. 3-ec2.yaml
+    - https://docs.aws.amazon.com/ja_jp/linux/al2023/release-notes/all-packages-al2023-20230517.html
 4. 4-rds.yaml
     - Important to check mysql parameters
     - In RDS (MultiAZ), you cannot specify the Availability Zone (AZ) for the Primary instance. If you want to place the Primary in a specific AZ, you need to manually failover after creating the instance.
