@@ -21,7 +21,15 @@ Parameters:
   EC2SSHInstanceType:
     Description: 'Instance type for the EC2 SSH instance'
     Type: String
-    Default: t2.nano
+    Default: c5.large
+  EC2SSHInstanceHostname:
+    Description: 'Hostname for the EC2 SSH instance'
+    Type: String
+    Default: ssh
+  EC2SSHInstancePrivateIpAddress:
+    Description: 'Private IP Address for the EC2 SSH instance'
+    Type: String
+    Default: "10.0.1.10"
   EC2WebImageId:
     Description: 'AMI ID for the EC2 Web instance'
     Type: AWS::EC2::Image::Id
@@ -29,7 +37,7 @@ Parameters:
   EC2WebInstanceType:
     Description: 'Instance type for the EC2 Web instance'
     Type: String
-    Default: t2.nano
+    Default: c5.large
   EC2WebInstance1Hostname:
     Description: 'Hostname for the EC2 Web instance1'
     Type: String
@@ -38,6 +46,14 @@ Parameters:
     Description: 'Hostname for the EC2 Web instance2'
     Type: String
     Default: web2
+  EC2WebInstance1PrivateIpAddress:
+    Description: 'Private IP Address for the EC2 Web instance1'
+    Type: String
+    Default: "10.0.3.10"
+  EC2WebInstance2PrivateIpAddress:
+    Description: 'Private IP Address for the EC2 Web instance2'
+    Type: String
+    Default: "10.0.4.10"
 Resources:
   # SSH Key Pair
   SSHKeyPair:
@@ -76,10 +92,27 @@ Resources:
           GroupSet:
             - !ImportValue EC2SSHSecurityGroup
           AssociatePublicIpAddress: true # Enable public IP
-          PrivateIpAddress: "10.0.1.10" # Private IP Address
+          PrivateIpAddress: !Ref EC2SSHInstancePrivateIpAddress # Private IP Address
       Tags:
         - Key: Name
           Value: !Sub "${Prefix}EC2SSHInstance"
+      UserData:
+        Fn::Base64: !Sub 
+          - |
+            #!/bin/bash -xe
+            # Disable IPv6
+            echo "net.ipv6.conf.all.disable_ipv6 = 1" >> /etc/sysctl.d/disable_ipv6.conf
+            echo "net.ipv6.conf.default.disable_ipv6 = 1" >> /etc/sysctl.d/disable_ipv6.conf
+            sysctl -p /etc/sysctl.d/disable_ipv6.conf
+            # Set timezone
+            dnf -y install glibc-langpack-ja
+            localectl set-locale LANG=ja_JP.utf8
+            timedatectl set-timezone Asia/Tokyo
+            # hostname
+            hostnamectl set-hostname --static ${EC2SSHInstanceHostname}
+          - {
+              EC2SSHInstanceHostname: !Ref EC2SSHInstanceHostname
+            }
   # EC2 Web instance1
   EC2WebInstance1:
     Type: AWS::EC2::Instance
@@ -100,7 +133,7 @@ Resources:
           GroupSet:
             - !ImportValue EC2WebSecurityGroup
           AssociatePublicIpAddress: false # Disable public IP
-          PrivateIpAddress: "10.0.3.10" # Private IP Address
+          PrivateIpAddress: !Ref EC2WebInstance1PrivateIpAddress # Private IP Address
       Tags:
         - Key: Name
           Value: !Sub "${Prefix}EC2WebInstance1"
@@ -148,10 +181,34 @@ Resources:
           GroupSet:
             - !ImportValue EC2WebSecurityGroup
           AssociatePublicIpAddress: false # Disable public IP
-          PrivateIpAddress: "10.0.4.10" # Private IP Address
+          PrivateIpAddress: !Ref EC2WebInstance2PrivateIpAddress # Private IP Address
       Tags:
         - Key: Name
           Value: !Sub "${Prefix}EC2WebInstance2"
+      UserData:
+        Fn::Base64: !Sub 
+          - |
+            #!/bin/bash -xe
+            # Install packages
+            dnf clean all
+            dnf -y update
+            dnf -y install \
+            git \
+            nginx \
+            htop
+            # Disable IPv6
+            echo "net.ipv6.conf.all.disable_ipv6 = 1" >> /etc/sysctl.d/disable_ipv6.conf
+            echo "net.ipv6.conf.default.disable_ipv6 = 1" >> /etc/sysctl.d/disable_ipv6.conf
+            sysctl -p /etc/sysctl.d/disable_ipv6.conf
+            # Set timezone
+            dnf -y install glibc-langpack-ja
+            localectl set-locale LANG=ja_JP.utf8
+            timedatectl set-timezone Asia/Tokyo
+            # hostname
+            hostnamectl set-hostname --static ${EC2WebInstance2Hostname}
+          - {
+              EC2WebInstance2Hostname: !Ref EC2WebInstance2Hostname
+            }
 Outputs:
   EC2WebInstance1:
     Description: "EC2 Web Instance1"

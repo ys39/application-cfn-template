@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description:
-  Create VPC, Subnet, InternetGateway, RouteTable, Route, SubnetRouteTableAssociation, PublicSubnetNetworkAcl, PrivateSubnetNetworkAcl, PublicSubnetNetworkAclAssociation, PrivateSubnetNetworkAclAssociation
+  Create VPC, Subnet, InternetGateway, NatGateway, RouteTable, Route, SubnetRouteTableAssociation, PublicSubnetNetworkAcl, PrivateSubnetNetworkAcl, PublicSubnetNetworkAclAssociation, PrivateSubnetNetworkAclAssociation
 Metadata:
   # Specify input parameter grouping and ordering
   "AWS::CloudFormation::Interface": 
@@ -18,6 +18,8 @@ Metadata:
           - PrivateSubnet1CIDR
           - PrivateSubnet2CIDR
           - VPCSSHCIDR
+          - NatGateway1PrivateIpAddress
+          - NatGateway2PrivateIpAddress
     ParameterLabels: 
       VPCCIDR: 
         default: "VPC CIDR"
@@ -31,6 +33,10 @@ Metadata:
         default: "PrivateSubnet2 CIDR"
       VPCSSHCIDR:
         default: "VPC SSH CIDR"
+      NatGateway1PrivateIpAddress:
+        default: "NatGateway1 Private IP Address"
+      NatGateway2PrivateIpAddress:
+        default: "NatGateway2 Private IP Address"
 Parameters:
   Prefix:
     Description: "Prefix for resource name"
@@ -60,6 +66,14 @@ Parameters:
     Description: "CIDR for VPC SSH"
     Type: String
     Default: "192.100.1.100/32"
+  NatGateway1PrivateIpAddress:
+    Description: "Private IP Address for NatGateway1"
+    Type: String
+    Default: "10.0.1.100"
+  NatGateway2PrivateIpAddress:
+    Description: "Private IP Address for NatGateway2"
+    Type: String
+    Default: "10.0.2.100"
 Resources:
   # Create VPC
   VPC:
@@ -342,6 +356,36 @@ Resources:
     Properties:
       VpcId: !Ref VPC
       InternetGatewayId: !Ref InternetGateway
+  # Nat Gateway
+  NatGateway1:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGateway1EIP.AllocationId
+      SubnetId: !Ref PublicSubnet1
+      PrivateIpAddress: !Ref NatGateway1PrivateIpAddress
+      Tags:
+        - Key: Name
+          Value: !Sub "${Prefix}PublicSubnet1NatGateway"
+  # EIP
+  NatGateway1EIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+  # Nat Gateway
+  NatGateway2:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGateway2EIP.AllocationId
+      SubnetId: !Ref PublicSubnet2
+      PrivateIpAddress: !Ref NatGateway2PrivateIpAddress
+      Tags:
+        - Key: Name
+          Value: !Sub "${Prefix}PublicSubnet2NatGateway"
+  # EIP
+  NatGateway2EIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
   # Create PublicRouteTable
   PublicRouteTable:
     Type: AWS::EC2::RouteTable
@@ -351,13 +395,20 @@ Resources:
         - Key: Name
           Value: !Sub "${Prefix}PublicRouteTable"
   # Create PublicRouteTable
-  PrivateRouteTable:
+  PrivateRouteTable1:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: !Sub "${Prefix}PrivateRouteTable"
+          Value: !Sub "${Prefix}PrivateRouteTable1"
+  PrivateRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${Prefix}PrivateRouteTable2"
   # Set the route to 0.0.0.0/0 as the Internet Gateway
   PublicRoute:
     Type: AWS::EC2::Route
@@ -366,6 +417,18 @@ Resources:
       RouteTableId: !Ref PublicRouteTable
       DestinationCidrBlock: 0.0.0.0/0
       GatewayId: !Ref InternetGateway
+  PrivateRoute1:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable1
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway1
+  PrivateRoute2:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable2
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway2
   # Associate Public Subnet1 with RouteTable
   PublicSubnetRouteTableAssociation1:
     Type: AWS::EC2::SubnetRouteTableAssociation
@@ -383,13 +446,13 @@ Resources:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       SubnetId: !Ref PrivateSubnet1
-      RouteTableId: !Ref PrivateRouteTable
+      RouteTableId: !Ref PrivateRouteTable1
   # Associate Private Subnet2 with RouteTable
   PrivateSubnetRouteTableAssociation2:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       SubnetId: !Ref PrivateSubnet2
-      RouteTableId: !Ref PrivateRouteTable
+      RouteTableId: !Ref PrivateRouteTable2
 Outputs:
   PublicSubnet1CIDR:
     Description: "PublicSubnet1 CIDR"
@@ -446,11 +509,16 @@ Outputs:
     Value: !Ref PublicRouteTable
     Export:
       Name: PublicRouteTable
-  PrivateRouteTable:
-    Description: "PrivateRouteTable ID"
-    Value: !Ref PrivateRouteTable
+  PrivateRouteTable1:
+    Description: "PrivateRouteTable1 ID"
+    Value: !Ref PrivateRouteTable1
     Export:
-      Name: PrivateRouteTable
+      Name: PrivateRouteTable1
+  PrivateRouteTable2:
+    Description: "PrivateRouteTable2 ID"
+    Value: !Ref PrivateRouteTable2
+    Export:
+      Name: PrivateRouteTable2
   InternetGateway:
     Description: "InternetGateway ID"
     Value: !Ref InternetGateway

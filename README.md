@@ -4,17 +4,41 @@
 
 ## Execution order of CloudFormation
 * The files 3-ec2.yaml, 4-rds.yaml, and 5-elasticache.yaml can be executed in any order.
+* The files 6-applicationloadbalancer.yaml and 3-ec2.yaml are dependent on each other, so they must be executed in order.
 1. 1-network.yaml
 2. 2-securitygroup.yaml
     - To avoid circular references, I am setting inbound/outbound rules after creating the security group.
 3. 3-ec2.yaml
-    - https://docs.aws.amazon.com/ja_jp/linux/al2023/release-notes/all-packages-al2023-20230517.html
+    - Amazon Linux 2023 Package List
+        - https://docs.aws.amazon.com/ja_jp/linux/al2023/release-notes/all-packages-al2023-20230517.html
+        - https://docs.aws.amazon.com/ja_jp/linux/al2022/release-notes/removed-packages.html
 4. 4-rds.yaml
     - Important to check mysql parameters
     - In RDS (MultiAZ), you cannot specify the Availability Zone (AZ) for the Primary instance. If you want to place the Primary in a specific AZ, you need to manually failover after creating the instance.
 5. 5-elasticache.yaml
 6. 6-applicationloadbalancer.yaml
-7. 7-natgateway.yaml
+
+## Route Table
+* Public Subnet
+
+    | Destination | Target |
+    | ------------------------------- | ------------------ |
+    | 0.0.0.0/0                       | igw |
+    | 10.0.0.0/16                     | local |
+        
+* Private Subnet 1
+
+    | Destination | Target |
+    | ------------------------------- | ------------------ |
+    | 0.0.0.0/0                       | nat gateway 1 |
+    | 10.0.0.0/16                     | local |
+
+* Private Subnet 2
+
+    | Destination | Target |
+    | ------------------------------- | ------------------ |
+    | 0.0.0.0/0                       | nat gateway 2 |
+    | 10.0.0.0/16                     | local |
 
 ## Security Group
 * ALB_SG
