@@ -87,6 +87,8 @@
     | Type | Protocol | Port | Destination |
     | ------ | --------- | ----- | ------ |
     | SSH    | TCP       | 22    | EC2_WEB_SG |
+    | HTTP   | TCP       | 80    | 0.0.0.0/0 |
+    | HTTPS  | TCP       | 443   | 0.0.0.0/0 |
 
 * RDS_SG
 

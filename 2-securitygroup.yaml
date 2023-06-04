@@ -146,7 +146,7 @@ Resources:
       ToPort: 22
       CidrIp: !ImportValue VPCSSHCIDR
   # EC2(SSH) outbound rule
-  EC2SSHSecurityGroupEgress:
+  EC2SSHSecurityGroupEgress1:
     Type: AWS::EC2::SecurityGroupEgress
     Properties:
       GroupId: !Ref EC2SSHSecurityGroup
@@ -154,6 +154,22 @@ Resources:
       FromPort: 22
       ToPort: 22
       DestinationSecurityGroupId: !Ref EC2WebSecurityGroup
+  EC2SSHSecurityGroupEgress2:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      GroupId: !Ref EC2SSHSecurityGroup
+      IpProtocol: tcp
+      FromPort: 80
+      ToPort: 80
+      CidrIp: 0.0.0.0/0
+  EC2SSHSecurityGroupEgress3:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      GroupId: !Ref EC2SSHSecurityGroup
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+      CidrIp: 0.0.0.0/0
 
   # RDS(MySQL) inbound rule
   MySQLSecurityGroupIngress:
