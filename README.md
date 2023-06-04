@@ -9,6 +9,7 @@
 2. 2-securitygroup.yaml
     - To avoid circular references, I am setting inbound/outbound rules after creating the security group.
 3. 3-ec2.yaml
+    - We only build instances. It does not perform user data execution.
     - Amazon Linux 2023 Package List
         - https://docs.aws.amazon.com/ja_jp/linux/al2023/release-notes/all-packages-al2023-20230517.html
         - https://docs.aws.amazon.com/ja_jp/linux/al2022/release-notes/removed-packages.html
@@ -70,6 +71,8 @@
     | ------ | --------- | ----- | ------ |
     | MYSQL  | TCP       | 3306  | RDS_SG |
     | Custom TCP | TCP  | 11211 | ElastiCache_SG |
+    | HTTP   | TCP       | 80    | 0.0.0.0/0 |
+    | HTTPS  | TCP       | 443   | 0.0.0.0/0 |
 
 * EC2_GW_SG
 

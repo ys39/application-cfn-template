@@ -99,26 +99,26 @@ Resources:
       Tags: 
         - Key: Name
           Value: !Sub "${Prefix}PrivateSubnetNACL"
-  PublicSubnetNetworkAclAssociation1:
-    Type: AWS::EC2::SubnetNetworkAclAssociation
-    Properties:
-      SubnetId: !Ref PublicSubnet1
-      NetworkAclId: !Ref PublicSubnetNetworkAcl
-  PublicSubnetNetworkAclAssociation2:
-    Type: AWS::EC2::SubnetNetworkAclAssociation
-    Properties:
-      SubnetId: !Ref PublicSubnet2
-      NetworkAclId: !Ref PublicSubnetNetworkAcl
-  PrivateSubnetNetworkAclAssociation1:
-    Type: AWS::EC2::SubnetNetworkAclAssociation
-    Properties:
-      SubnetId: !Ref PrivateSubnet1
-      NetworkAclId: !Ref PrivateSubnetNetworkAcl
-  PrivateSubnetNetworkAclAssociation2:
-    Type: AWS::EC2::SubnetNetworkAclAssociation
-    Properties:
-      SubnetId: !Ref PrivateSubnet2
-      NetworkAclId: !Ref PrivateSubnetNetworkAcl
+  #PublicSubnetNetworkAclAssociation1:
+  #  Type: AWS::EC2::SubnetNetworkAclAssociation
+  #  Properties:
+  #    SubnetId: !Ref PublicSubnet1
+  #    NetworkAclId: !Ref PublicSubnetNetworkAcl
+  #PublicSubnetNetworkAclAssociation2:
+  #  Type: AWS::EC2::SubnetNetworkAclAssociation
+  #  Properties:
+  #    SubnetId: !Ref PublicSubnet2
+  #    NetworkAclId: !Ref PublicSubnetNetworkAcl
+  #PrivateSubnetNetworkAclAssociation1:
+  #  Type: AWS::EC2::SubnetNetworkAclAssociation
+  #  Properties:
+  #    SubnetId: !Ref PrivateSubnet1
+  #    NetworkAclId: !Ref PrivateSubnetNetworkAcl
+  #PrivateSubnetNetworkAclAssociation2:
+  #  Type: AWS::EC2::SubnetNetworkAclAssociation
+  #  Properties:
+  #    SubnetId: !Ref PrivateSubnet2
+  #    NetworkAclId: !Ref PrivateSubnetNetworkAcl
   PublicSubnetInboundSSHRule:
     Type: AWS::EC2::NetworkAclEntry
     Properties:

@@ -21,7 +21,7 @@ Parameters:
   EC2SSHInstanceType:
     Description: 'Instance type for the EC2 SSH instance'
     Type: String
-    Default: c5.large
+    Default: t3.micro
   EC2SSHInstanceHostname:
     Description: 'Hostname for the EC2 SSH instance'
     Type: String
@@ -37,7 +37,7 @@ Parameters:
   EC2WebInstanceType:
     Description: 'Instance type for the EC2 Web instance'
     Type: String
-    Default: c5.large
+    Default: t3.micro
   EC2WebInstance1Hostname:
     Description: 'Hostname for the EC2 Web instance1'
     Type: String
@@ -96,23 +96,23 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub "${Prefix}EC2SSHInstance"
-      UserData:
-        Fn::Base64: !Sub 
-          - |
-            #!/bin/bash -xe
-            # Disable IPv6
-            echo "net.ipv6.conf.all.disable_ipv6 = 1" >> /etc/sysctl.d/disable_ipv6.conf
-            echo "net.ipv6.conf.default.disable_ipv6 = 1" >> /etc/sysctl.d/disable_ipv6.conf
-            sysctl -p /etc/sysctl.d/disable_ipv6.conf
-            # Set timezone
-            dnf -y install glibc-langpack-ja
-            localectl set-locale LANG=ja_JP.utf8
-            timedatectl set-timezone Asia/Tokyo
-            # hostname
-            hostnamectl set-hostname --static ${EC2SSHInstanceHostname}
-          - {
-              EC2SSHInstanceHostname: !Ref EC2SSHInstanceHostname
-            }
+      #UserData:
+      #  Fn::Base64: !Sub 
+      #    - |
+      #      #!/bin/bash -xe
+      #      # Disable IPv6
+      #      echo "net.ipv6.conf.all.disable_ipv6 = 1" >> /etc/sysctl.d/disable_ipv6.conf
+      #      echo "net.ipv6.conf.default.disable_ipv6 = 1" >> /etc/sysctl.d/disable_ipv6.conf
+      #      sysctl -p /etc/sysctl.d/disable_ipv6.conf
+      #      # Set timezone
+      #      dnf -y install glibc-langpack-ja
+      #      localectl set-locale LANG=ja_JP.utf8
+      #      timedatectl set-timezone Asia/Tokyo
+      #      # hostname
+      #      hostnamectl set-hostname --static ${EC2SSHInstanceHostname}
+      #    - {
+      #        EC2SSHInstanceHostname: !Ref EC2SSHInstanceHostname
+      #      }
   # EC2 Web instance1
   EC2WebInstance1:
     Type: AWS::EC2::Instance
@@ -137,30 +137,30 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub "${Prefix}EC2WebInstance1"
-      UserData:
-        Fn::Base64: !Sub 
-          - |
-            #!/bin/bash -xe
-            # Install packages
-            dnf clean all
-            dnf -y update
-            dnf -y install \
-            git \
-            nginx \
-            htop
-            # Disable IPv6
-            echo "net.ipv6.conf.all.disable_ipv6 = 1" >> /etc/sysctl.d/disable_ipv6.conf
-            echo "net.ipv6.conf.default.disable_ipv6 = 1" >> /etc/sysctl.d/disable_ipv6.conf
-            sysctl -p /etc/sysctl.d/disable_ipv6.conf
-            # Set timezone
-            dnf -y install glibc-langpack-ja
-            localectl set-locale LANG=ja_JP.utf8
-            timedatectl set-timezone Asia/Tokyo
-            # hostname
-            hostnamectl set-hostname --static ${EC2WebInstance1Hostname}
-          - {
-              EC2WebInstance1Hostname: !Ref EC2WebInstance1Hostname
-            }
+      #UserData:
+      #  Fn::Base64: !Sub 
+      #    - |
+      #      #!/bin/bash -xe
+      #      # Install packages
+      #      dnf clean all
+      #      dnf -y update
+      #      dnf -y install \
+      #      git \
+      #      nginx \
+      #      htop
+      #      # Disable IPv6
+      #      echo "net.ipv6.conf.all.disable_ipv6 = 1" >> /etc/sysctl.d/disable_ipv6.conf
+      #      echo "net.ipv6.conf.default.disable_ipv6 = 1" >> /etc/sysctl.d/disable_ipv6.conf
+      #      sysctl -p /etc/sysctl.d/disable_ipv6.conf
+      #      # Set timezone
+      #      dnf -y install glibc-langpack-ja
+      #      localectl set-locale LANG=ja_JP.utf8
+      #      timedatectl set-timezone Asia/Tokyo
+      #      # hostname
+      #      hostnamectl set-hostname --static ${EC2WebInstance1Hostname}
+      #    - {
+      #        EC2WebInstance1Hostname: !Ref EC2WebInstance1Hostname
+      #      }
   # EC2 Web instance2
   EC2WebInstance2:
     Type: AWS::EC2::Instance
@@ -185,30 +185,30 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub "${Prefix}EC2WebInstance2"
-      UserData:
-        Fn::Base64: !Sub 
-          - |
-            #!/bin/bash -xe
-            # Install packages
-            dnf clean all
-            dnf -y update
-            dnf -y install \
-            git \
-            nginx \
-            htop
-            # Disable IPv6
-            echo "net.ipv6.conf.all.disable_ipv6 = 1" >> /etc/sysctl.d/disable_ipv6.conf
-            echo "net.ipv6.conf.default.disable_ipv6 = 1" >> /etc/sysctl.d/disable_ipv6.conf
-            sysctl -p /etc/sysctl.d/disable_ipv6.conf
-            # Set timezone
-            dnf -y install glibc-langpack-ja
-            localectl set-locale LANG=ja_JP.utf8
-            timedatectl set-timezone Asia/Tokyo
-            # hostname
-            hostnamectl set-hostname --static ${EC2WebInstance2Hostname}
-          - {
-              EC2WebInstance2Hostname: !Ref EC2WebInstance2Hostname
-            }
+      #UserData:
+      #  Fn::Base64: !Sub 
+      #    - |
+      #      #!/bin/bash -xe
+      #      # Install packages
+      #      dnf clean all
+      #      dnf -y update
+      #      dnf -y install \
+      #      git \
+      #      nginx \
+      #      htop
+      #      # Disable IPv6
+      #      echo "net.ipv6.conf.all.disable_ipv6 = 1" >> /etc/sysctl.d/disable_ipv6.conf
+      #      echo "net.ipv6.conf.default.disable_ipv6 = 1" >> /etc/sysctl.d/disable_ipv6.conf
+      #      sysctl -p /etc/sysctl.d/disable_ipv6.conf
+      #      # Set timezone
+      #      dnf -y install glibc-langpack-ja
+      #      localectl set-locale LANG=ja_JP.utf8
+      #      timedatectl set-timezone Asia/Tokyo
+      #      # hostname
+      #      hostnamectl set-hostname --static ${EC2WebInstance2Hostname}
+      #    - {
+      #        EC2WebInstance2Hostname: !Ref EC2WebInstance2Hostname
+      #      }
 Outputs:
   EC2WebInstance1:
     Description: "EC2 Web Instance1"
