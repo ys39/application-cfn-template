@@ -67,13 +67,21 @@ Resources:
           Value: !Sub "${Prefix}MemcachedSecurityGroup"
 
   # ALB inbound rule
-  LoadBalancerSecurityGroupIngress:
+  LoadBalancerSecurityGroupIngress1:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
       GroupId: !Ref LoadBalancerSecurityGroup
       IpProtocol: tcp
       FromPort: 443
       ToPort: 443
+      CidrIp: 0.0.0.0/0
+  LoadBalancerSecurityGroupIngress2:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref LoadBalancerSecurityGroup
+      IpProtocol: tcp
+      FromPort: 80
+      ToPort: 80
       CidrIp: 0.0.0.0/0
   # ALB outbound rule
   LoadBalancerSecurityGroupEgress:
