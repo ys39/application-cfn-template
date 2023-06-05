@@ -99,26 +99,26 @@ Resources:
       Tags: 
         - Key: Name
           Value: !Sub "${Prefix}PrivateSubnetNACL"
-  #PublicSubnetNetworkAclAssociation1:
-  #  Type: AWS::EC2::SubnetNetworkAclAssociation
-  #  Properties:
-  #    SubnetId: !Ref PublicSubnet1
-  #    NetworkAclId: !Ref PublicSubnetNetworkAcl
-  #PublicSubnetNetworkAclAssociation2:
-  #  Type: AWS::EC2::SubnetNetworkAclAssociation
-  #  Properties:
-  #    SubnetId: !Ref PublicSubnet2
-  #    NetworkAclId: !Ref PublicSubnetNetworkAcl
-  #PrivateSubnetNetworkAclAssociation1:
-  #  Type: AWS::EC2::SubnetNetworkAclAssociation
-  #  Properties:
-  #    SubnetId: !Ref PrivateSubnet1
-  #    NetworkAclId: !Ref PrivateSubnetNetworkAcl
-  #PrivateSubnetNetworkAclAssociation2:
-  #  Type: AWS::EC2::SubnetNetworkAclAssociation
-  #  Properties:
-  #    SubnetId: !Ref PrivateSubnet2
-  #    NetworkAclId: !Ref PrivateSubnetNetworkAcl
+  PublicSubnetNetworkAclAssociation1:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      NetworkAclId: !Ref PublicSubnetNetworkAcl
+  PublicSubnetNetworkAclAssociation2:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      NetworkAclId: !Ref PublicSubnetNetworkAcl
+  PrivateSubnetNetworkAclAssociation1:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet1
+      NetworkAclId: !Ref PrivateSubnetNetworkAcl
+  PrivateSubnetNetworkAclAssociation2:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet2
+      NetworkAclId: !Ref PrivateSubnetNetworkAcl
   PublicSubnetInboundSSHRule:
     Type: AWS::EC2::NetworkAclEntry
     Properties:
@@ -165,7 +165,7 @@ Resources:
       Egress: false
       CidrBlock: 0.0.0.0/0
       PortRange:
-        From: 32768
+        From: 1024
         To: 65535
   PublicSubnetOutboundSSHRule:
     Type: AWS::EC2::NetworkAclEntry
@@ -213,7 +213,7 @@ Resources:
       Egress: true
       CidrBlock: 0.0.0.0/0
       PortRange:
-        From: 32768
+        From: 1024
         To: 65535
   PrivateSubnetInboundSSHRule:
     Type: AWS::EC2::NetworkAclEntry
@@ -263,6 +263,18 @@ Resources:
       PortRange:
         From: 11211
         To: 11211
+  PrivateSubnetInboundEphemeralRule:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref PrivateSubnetNetworkAcl
+      RuleNumber: 104
+      Protocol: 6  # TCP
+      RuleAction: allow
+      Egress: false
+      CidrBlock: 0.0.0.0/0
+      PortRange:
+        From: 1024
+        To: 65535
   PrivateSubnetOutboundHTTPRule:
     Type: AWS::EC2::NetworkAclEntry
     Properties:
