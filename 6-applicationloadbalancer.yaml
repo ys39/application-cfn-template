@@ -13,7 +13,11 @@ Parameters:
   Prefix:
     Description: "Prefix for resource name"
     Type: String
-    Default: "FirstPj-" # Prefix for resource name
+    Default: "dev-" # Prefix for resource name
+    AllowedValues:
+      - dev-
+      - stg-
+      - prd-
   HealthCheckIntervalSeconds:
     Type: String
     Default: "30"
@@ -37,10 +41,13 @@ Resources:
       Name: !Sub "${Prefix}LoadBalancer"
       Scheme: internet-facing
       Subnets:
-        - !ImportValue PublicSubnet1
-        - !ImportValue PublicSubnet2
+        - Fn::ImportValue:
+            !Sub "${Prefix}PublicSubnet1" # Import Subnet ID from network stack
+        - Fn::ImportValue:
+            !Sub "${Prefix}PublicSubnet2" # Import Subnet ID from network stack
       SecurityGroups:
-        - !ImportValue LoadBalancerSecurityGroup
+        - Fn::ImportValue:
+            !Sub "${Prefix}LoadBalancerSecurityGroup" # Import Security Group ID from securitygroup stack
       Type: application
       IpAddressType: ipv4
       Tags:
@@ -73,12 +80,18 @@ Resources:
       Port: 80
       Protocol: HTTP
       ProtocolVersion: HTTP1
-      VpcId: !ImportValue VPC
+      VpcId:
+        Fn::ImportValue:
+          !Sub "${Prefix}VPC" # Import VPC ID from network stack
       TargetType: instance
       Targets:
-        - Id: !ImportValue EC2WebInstance1
+        - Id:
+            Fn::ImportValue:
+              !Sub "${Prefix}EC2WebInstance1" # Import Instance ID from ec2 stack
           Port: 80
-        - Id: !ImportValue EC2WebInstance2
+        - Id: 
+            Fn::ImportValue:
+              !Sub "${Prefix}EC2WebInstance2" # Import Instance ID from ec2 stack
           Port: 80
       Tags:
         - Key: Name

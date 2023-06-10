@@ -13,7 +13,11 @@ Parameters:
   Prefix:
     Description: "Prefix for resource name"
     Type: String
-    Default: "FirstPj-" # Prefix for resource name
+    Default: "dev-" # Prefix for resource name
+    AllowedValues:
+      - dev-
+      - stg-
+      - prd-
   EC2SSHImageId:
     Description: 'AMI ID for the EC2 SSH instance'
     Type: AWS::EC2::Image::Id
@@ -88,9 +92,12 @@ Resources:
       KeyName: !Ref SSHKeyPair
       NetworkInterfaces:
         - DeviceIndex: "0"
-          SubnetId: !ImportValue PublicSubnet1
+          SubnetId:
+            Fn::ImportValue:
+              !Sub "${Prefix}PublicSubnet1" # Import Public Subnet ID from network stack
           GroupSet:
-            - !ImportValue EC2SSHSecurityGroup
+            - Fn::ImportValue:
+                !Sub "${Prefix}EC2SSHSecurityGroup" # Import Security Group ID from securitygroup stack
           AssociatePublicIpAddress: true # Enable public IP
           PrivateIpAddress: !Ref EC2SSHInstancePrivateIpAddress # Private IP Address
       Tags:
@@ -129,9 +136,12 @@ Resources:
       KeyName: !Ref SSHKeyPair
       NetworkInterfaces:
         - DeviceIndex: "0"
-          SubnetId: !ImportValue PrivateSubnet1
+          SubnetId:
+            Fn::ImportValue:
+              !Sub "${Prefix}PrivateSubnet1" # Import Private Subnet ID from network stack
           GroupSet:
-            - !ImportValue EC2WebSecurityGroup
+            - Fn::ImportValue:
+                !Sub "${Prefix}EC2WebSecurityGroup" # Import Security Group ID from securitygroup stack
           AssociatePublicIpAddress: false # Disable public IP
           PrivateIpAddress: !Ref EC2WebInstance1PrivateIpAddress # Private IP Address
       Tags:
@@ -181,9 +191,12 @@ Resources:
       KeyName: !Ref SSHKeyPair
       NetworkInterfaces:
         - DeviceIndex: "0"
-          SubnetId: !ImportValue PrivateSubnet2
+          SubnetId: 
+            Fn::ImportValue:
+              !Sub "${Prefix}PrivateSubnet2" # Import Private Subnet ID from network stack
           GroupSet:
-            - !ImportValue EC2WebSecurityGroup
+            - Fn::ImportValue:
+                !Sub "${Prefix}EC2WebSecurityGroup" # Import Security Group ID from securitygroup stack
           AssociatePublicIpAddress: false # Disable public IP
           PrivateIpAddress: !Ref EC2WebInstance2PrivateIpAddress # Private IP Address
       Tags:
@@ -222,9 +235,9 @@ Outputs:
     Description: "EC2 Web Instance1"
     Value: !Ref EC2WebInstance1
     Export:
-      Name: EC2WebInstance1
+      Name: !Sub "${Prefix}EC2WebInstance1"
   EC2WebInstance2:
     Description: "EC2 Web Instance2"
     Value: !Ref EC2WebInstance2
     Export:
-      Name: EC2WebInstance2
+      Name: !Sub "${Prefix}EC2WebInstance2"

@@ -44,7 +44,11 @@ Parameters:
   Prefix:
     Description: "Prefix for resource name"
     Type: String
-    Default: "FirstPj-" # Prefix for resource name
+    Default: "dev-" # Prefix for resource name
+    AllowedValues:
+      - dev-
+      - stg-
+      - prd-
   MySQLMajorVersion:
     Type: String
     Default: "8.0"
@@ -110,8 +114,10 @@ Resources:
       DBSubnetGroupName: !Sub "${Prefix}MySQLInstanceSubnetGroup"
       DBSubnetGroupDescription: Subnets for RDS DB Instance
       SubnetIds:
-        - !ImportValue PrivateSubnet2 # Import private subnet ID in AZ2 from network stack
-        - !ImportValue PrivateSubnet1 # Import private subnet ID in AZ1 from network stack
+        - Fn::ImportValue:
+            !Sub "${Prefix}PrivateSubnet1" # Import private subnet ID in AZ1 from network stack
+        - Fn::ImportValue:
+            !Sub "${Prefix}PrivateSubnet2" # Import private subnet ID in AZ2 from network stack
 
   # RDS(MySQL) instance
   MySQLInstance:
@@ -127,7 +133,8 @@ Resources:
       AllocatedStorage: !Ref DBInstanceStorageSize
       StorageType: !Ref DBInstanceStorageType
       VPCSecurityGroups:
-        - !ImportValue MySQLSecurityGroup # Import Security Group ID from security group stack
+        - Fn::ImportValue:
+            !Sub "${Prefix}MySQLSecurityGroup" # Import Security Group ID from Security Group stack
       DBSubnetGroupName: !Ref DBSubnetGroup
       PubliclyAccessible: false
       DBName: !Ref DBName

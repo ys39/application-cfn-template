@@ -13,7 +13,11 @@ Parameters:
   Prefix:
     Description: "Prefix for resource name"
     Type: String
-    Default: "FirstPj-" # Prefix for resource name
+    Default: "dev-" # Prefix for resource name
+    AllowedValues:
+      - dev-
+      - stg-
+      - prd-
 Resources:
   # Security Group for ALB
   LoadBalancerSecurityGroup:
@@ -21,7 +25,9 @@ Resources:
     Properties:
       GroupName: !Sub "${Prefix}LoadBalancerSecurityGroup"
       GroupDescription: Security Group for ALB
-      VpcId: !ImportValue VPC # Import VPC ID from network stack
+      VpcId:
+        Fn::ImportValue:
+          !Sub "${Prefix}VPC" # Import VPC ID from network stack
       Tags:
         - Key: Name
           Value: !Sub "${Prefix}LoadBalancerSecurityGroup"
@@ -31,7 +37,9 @@ Resources:
     Properties:
       GroupName: !Sub "${Prefix}EC2WebSecurityGroup"
       GroupDescription: Security Group for EC2(Web)
-      VpcId: !ImportValue VPC # Import VPC ID from network stack
+      VpcId:
+        Fn::ImportValue:
+          !Sub "${Prefix}VPC" # Import VPC ID from network stack
       Tags:
         - Key: Name
           Value: !Sub "${Prefix}EC2WebSecurityGroup"
@@ -41,7 +49,9 @@ Resources:
     Properties:
       GroupName: !Sub "${Prefix}EC2SSHSecurityGroup"
       GroupDescription: Security Group for EC2(SSH)
-      VpcId: !ImportValue VPC # Import VPC ID from network stack
+      VpcId:
+        Fn::ImportValue:
+          !Sub "${Prefix}VPC" # Import VPC ID from network stack
       Tags:
         - Key: Name
           Value: !Sub "${Prefix}EC2SSHSecurityGroup"
@@ -51,7 +61,9 @@ Resources:
     Properties:
       GroupName: !Sub "${Prefix}MySQLSecurityGroup"
       GroupDescription: Security Group for RDS(MySQL)
-      VpcId: !ImportValue VPC # Import VPC ID from network stack
+      VpcId:
+        Fn::ImportValue:
+          !Sub "${Prefix}VPC" # Import VPC ID from network stack
       Tags:
         - Key: Name
           Value: !Sub "${Prefix}MySQLSecurityGroup"
@@ -61,7 +73,9 @@ Resources:
     Properties:
       GroupName: !Sub "${Prefix}MemcachedSecurityGroup"
       GroupDescription: Security Group for ElastiCache(Memcached)
-      VpcId: !ImportValue VPC # Import VPC ID from network stack
+      VpcId:
+        Fn::ImportValue:
+          !Sub "${Prefix}VPC" # Import VPC ID from network stack
       Tags:
         - Key: Name
           Value: !Sub "${Prefix}MemcachedSecurityGroup"
@@ -152,7 +166,9 @@ Resources:
       IpProtocol: tcp
       FromPort: 22
       ToPort: 22
-      CidrIp: !ImportValue VPCSSHCIDR
+      CidrIp:
+        Fn::ImportValue:
+          !Sub "${Prefix}VPCSSHCIDR" # Import VPC SSH CIDR from network stack
   # EC2(SSH) outbound rule
   EC2SSHSecurityGroupEgress1:
     Type: AWS::EC2::SecurityGroupEgress
@@ -217,24 +233,24 @@ Outputs:
     Description: "Security Group for ALB"
     Value: !Ref LoadBalancerSecurityGroup
     Export:
-      Name: LoadBalancerSecurityGroup
+      Name: !Sub "${Prefix}LoadBalancerSecurityGroup"
   EC2WebSecurityGroup:
     Description: "Security Group for EC2(Web)"
     Value: !Ref EC2WebSecurityGroup
     Export:
-      Name: EC2WebSecurityGroup
+      Name: !Sub "${Prefix}EC2WebSecurityGroup"
   EC2SSHSecurityGroup:
     Description: "Security Group for EC2(SSH)"
     Value: !Ref EC2SSHSecurityGroup
     Export:
-      Name: EC2SSHSecurityGroup
+      Name: !Sub "${Prefix}EC2SSHSecurityGroup"
   MySQLSecurityGroup:
     Description: "Security Group for RDS(MySQL)"
     Value: !Ref MySQLSecurityGroup
     Export:
-      Name: MySQLSecurityGroup
+      Name: !Sub "${Prefix}MySQLSecurityGroup"
   MemcachedSecurityGroup:
     Description: "Security Group for ElastiCache(Memcached)"
     Value: !Ref MemcachedSecurityGroup
     Export:
-      Name: MemcachedSecurityGroup
+      Name: !Sub "${Prefix}MemcachedSecurityGroup"
