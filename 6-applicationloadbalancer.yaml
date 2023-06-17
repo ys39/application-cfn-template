@@ -96,3 +96,9 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub "${Prefix}LoadBalancerTargetGroup"
+Outputs:
+  LoadBalancer:
+    Description: "Load Balancer"
+    Value: !Ref LoadBalancer
+    Export:
+      Name: !Sub "${Prefix}LoadBalancer"

@@ -1,0 +1,112 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description:
+  Create WAF
+Metadata:
+  # Specify input parameter grouping and ordering
+  "AWS::CloudFormation::Interface": 
+    ParameterGroups: 
+      - Label: 
+          default: "Prefix"
+        Parameters: 
+          - Prefix
+Parameters:
+  Prefix:
+    Description: "Prefix for resource name"
+    Type: String
+    Default: "dev-" # Prefix for resource name
+    AllowedValues:
+      - dev-
+      - stg-
+      - prd-
+Resources:
+  WebACL:
+    Type: 'AWS::WAFv2::WebACL'
+    Properties:
+      Name: !Sub "${Prefix}WebACL"
+      Scope: REGIONAL # for ALB
+      DefaultAction:
+        Allow: {}
+      VisibilityConfig:
+        SampledRequestsEnabled: true # for CloudWatch
+        CloudWatchMetricsEnabled: true # for CloudWatch
+        MetricName: !Sub "${Prefix}WebACL"
+      Rules:
+        - Name: PHPRule
+          Priority: 0
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesPHPRuleSet
+          OverrideAction: 
+            None: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: PHPRule
+        - Name: SQLiRuleSet
+          Priority: 1
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesSQLiRuleSet
+          OverrideAction: 
+            None: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: SQLiRuleSet
+        - Name: AmazonIpReputationList
+          Priority: 2
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesAmazonIpReputationList
+          OverrideAction: 
+            None: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: AmazonIpReputationList
+        - Name: CommonRule
+          Priority: 3
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesCommonRuleSet
+          OverrideAction: 
+            None: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: CommonRule
+        - Name: KnownBadInputsRuleSet
+          Priority: 4
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesKnownBadInputsRuleSet
+          OverrideAction: 
+            None: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: KnownBadInputsRuleSet
+        - Name: LinuxRuleSet
+          Priority: 5
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesLinuxRuleSet
+          OverrideAction: 
+            None: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: LinuxRuleSet
+  WafAclAssociation:
+    Type: 'AWS::WAFv2::WebACLAssociation'
+    Properties:
+      ResourceArn:
+        Fn::ImportValue:
+          !Sub "${Prefix}LoadBalancer"
+      WebACLArn: !GetAtt WebACL.Arn
